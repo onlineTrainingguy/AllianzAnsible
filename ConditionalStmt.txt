@@ -1,0 +1,77 @@
+---
+ - hosts: webservers,dbservers
+   tasks:
+     - debug:
+         msg: "{{ ansible_facts['os_family'], ansible_facts['nodename'], ansible_all_ipv4_addresses }} release= {{ ansible_facts['lsb']['major_release'] }}"
+---
+ - hosts: webservers,dbservers
+   tasks:
+     - apt:
+        name: apache2
+        state: absent
+        purge: yes
+       when: ansible_facts['os_family']=='Debian'
+---
+ - hosts: dbservers
+   tasks:
+     - name: Execute the command
+       command: date1
+       register: output
+       ignore_errors: true
+       when: ansible_facts['os_family']=='Debian'
+     - name: Print output
+       debug:
+         msg: "{{ output }}"
+     - name: If succeede
+       debug:
+         msg: "Command is executed successfully"
+       when: output is succeeded
+     - name: If faile
+       debug:
+         msg: "Command is failed"
+       when: output is failed
+     - name: If succeede
+       debug:
+         msg: "Command is skipped"
+       when: output is skipped
+
+---
+ - hosts: dbservers
+   tasks:
+    - name: Run the command if "foo" is defined
+      ansible.builtin.shell: echo "I've got '{{ foo }}' and am not afraid to use it!"
+      when: foo is defined
+
+    - name: Fail if bar is undefined
+      ansible.builtin.fail: msg="Bailing out. This play requires 'bar'"
+      when: bar is undefined
+---
+ - hosts: dbservers
+   tasks:
+     - import_tasks: test.yaml
+     - name: Set a variable
+       ansible.builtin.set_fact:
+         x: foo
+
+     - name: Print a variable
+       ansible.builtin.debug:
+          var: x
+---
+ - name: User Module
+   hosts: dbservers
+   tasks:
+     - name: adding John user
+       user:
+          name: John
+       when: ansible_facts['os_family']!='Debian'
+     - name: find the user
+       shell: cat /etc/passwd | grep John | wc -l
+       register: output
+     - name: User Creation
+       debug:
+          msg: "Created"
+       when: output.stdout=="1"
+     - name: User Removed
+       debug:
+          msg: "Not Created"
+       when: output.stdout!="1"
