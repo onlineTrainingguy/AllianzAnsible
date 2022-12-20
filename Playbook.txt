@@ -57,3 +57,70 @@
      - fetch:
          src: /tmp/myfile.txt
          dest: /tmp/myfile1.txt        
+         
+         
+---
+ - hosts: webservers
+   tasks:
+     - service:
+          name: apache2
+          state: started
+---
+ - name: play for dry run
+   hosts: dbservers
+   tasks:
+        - name: Copying testing.txt file to webservers
+          copy: src=/tmp/testing.txt dest=/tmp/test.txt
+---
+ - name: play for dbservers multiple tasks
+   hosts: dbservers
+   vars_prompt:
+      name: data
+      prompt: Enter the value
+   tasks:
+         # Task1
+        - name: create a file
+          command: touch /tmp/myfile.txt
+          check_mode: no
+        # Task2
+        - name: Add content to the file
+          copy:
+              content: "{{ data }}"
+              dest: /tmp/myfile.txt
+          check_mode: yes
+         # Task 3
+        - name: Read the content
+          command: cat /tmp/myfile.txt
+          register: output
+          # Task 4
+        - name: Print the content
+          debug:
+             var: output.stdout
+---
+ - hosts: dbservers
+   tasks:
+     - user:
+        name: john
+        state: absent
+
+---
+ - hosts: dbservers,server1
+   tasks:
+        - name: Task0
+          command: /bin/true
+          ignore_unreachable: true
+        - name: Task1
+          command: date
+        - name: Task2
+          command: date1
+          ignore_errors: True
+        - name: Task3
+          command: ls
+---
+ - hosts: dbservers
+   tasks:
+     - name: Fail task when the command error output prints FAILED
+       ansible.builtin.command: /usr/bin/example-command -x -y -z
+       register: command_result
+       failed_when: "'FAILED' in command_result.stderr"
+         
