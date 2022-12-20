@@ -1,0 +1,59 @@
+---
+ - name: Play To run multiple tasks
+   hosts: dbservers
+   vars_prompt:
+       name: data
+       prompt: Enter value
+   tasks:
+     - name: Create a file
+       command: touch /tmp/myfile.txt
+       args:
+          creates: /home/ec2
+     - name: write the content
+       copy:
+        content: "{{ data }}"
+        dest: /tmp/myfile.txt
+     - name: Read the file
+       command: cat /tmp/myfile.txt
+       register: output
+     - name: Print file content
+       debug:
+        msg: " {{ output.stdout }}"
+        
+        
+---
+ - name: Play for executing a script on agent node
+   hosts: dbservers,webservers
+   tasks:
+     - name: copy test.sh file {{ inventory_hostname }}
+       copy:
+         src: /tmp/test.sh
+         dest: /tmp/test.sh
+     - name: Providing permission
+       shell: chmod 777 /tmp/test.sh
+     - name: Execute the script
+       command: bash  /tmp/test.sh
+
+
+---
+ - name: run the script module
+   hosts: webservers,dbservers
+   vars:
+     env: 'Production'
+   tasks:
+     - script:
+          cmd: /tmp/test.sh "{{ env }}"
+            #args:
+            #removes: /the/removed/file.txt
+     - script:
+          cmd: /tmp/test.py
+       args:
+          executable: python3
+
+
+---
+ - hosts: dbservers
+   tasks:
+     - fetch:
+         src: /tmp/myfile.txt
+         dest: /tmp/myfile1.txt        
