@@ -1,0 +1,79 @@
+---
+ - name: play for loops
+   hosts: dbservers
+   tasks:
+       - name: Print some values
+         debug:
+              msg: "{{ item }}"
+         loop:
+            - 1
+            - 2
+            - 3
+            - 4
+---
+ - hosts: dbservers
+   vars:
+     listofusers:
+       - testuser1
+       - testuser2
+       - testuser3
+   tasks:
+     - user:
+         name: "{{ item }}"
+         state: present
+       loop: "{{ listofusers }}"
+---
+ - hosts: dbservers
+   tasks:
+     - user:
+         name: "{{item.name }}"
+         groups: "{{item.group }}"
+         state: present
+       loop:
+        - { name: 'testuser4', group: 'ec2-user' }
+        - { name: 'testuser5', group: 'root' }
+
+---
+ - hosts: dbservers
+   tasks:
+     - name: Register loop output as a variable
+       ansible.builtin.shell: "echo {{ item }}"
+       loop:
+         - "one"
+         - "two"
+       register: echo
+     - name: Print echo var
+       debug:
+         msg: "{{ echo }}"
+---
+ - hosts: dbservers
+   tasks:
+     - name: Show all the hosts in the inventory
+       ansible.builtin.debug:
+        msg: "{{ item }}"
+       loop: "{{ groups['all'] }}"
+---
+ - name: using Tags
+   hosts: webservers
+   tasks:
+        - name: Start a service
+          service:
+            name: apache2
+            state: started
+          tags: startservice
+        - name: Stop apache service
+          service:
+             name: apache2
+             state: stopped
+          tags: stopservice
+        - name: Restart apahce service
+          service:
+             name: apache2
+             state: restarted
+          tags: restartservice
+        - name: Install apache
+          apt: name=apache2 state=present
+          tags: installapache
+        - name: remove apache
+          apt: name=apache2 state=absent purge=yes
+          tags: removeapache
