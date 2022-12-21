@@ -1,0 +1,84 @@
+---
+ - hosts: webservers
+   tasks:
+     - name: change permission of a file
+       file:
+         path: /tmp/foo.conf
+         owner: ubuntu
+         group: ubuntu
+         mode: 0740
+---
+ - name: play for file module
+   hosts: webservers
+   tasks:
+      - name: Create a soft link file
+        file:
+           src: /tmp/foo.conf
+           dest: /tmp/foo.lnk
+           state: link
+---
+ - name: play for file module
+   hosts: webservers
+   tasks:
+      - name: Create a soft link file
+        file:
+           src: '/tmp/{{ item.src }}'
+           dest: '/tmp/{{ item.dest }}'
+           state: link
+        with_items:
+           - { src: 'foo.conf', dest: 'foo.lnk' }
+           - { src: 'foo.txt', dest: 'footxt.lnk' }
+---
+ - name: play for file module
+   hosts: webservers
+   tasks:
+      - name: Create a soft link file
+        file:
+           src: '/tmp/{{ item.src }}'
+           dest: '/tmp/{{ item.dest }}'
+           state: hard
+        with_items:
+           - { src: 'foo.conf', dest: 'foohard.lnk' }
+           - { src: 'foo.txt', dest: 'footxthard.lnk' }
+---
+ - name: play for file module
+   hosts: webservers
+   tasks:
+      - name: Create a soft link file
+        file:
+           path: /tmp/newfile.txt
+           state: touch
+           mode : u=rw,g=r
+---
+ - name: play for file module
+   hosts: webservers
+   tasks:
+      - name: Create a soft link file
+        file:
+           path: /tmp/newfile.txt
+           state: touch
+           mode : u+rw,g+r,o-r
+---
+ - name: play for file module
+   hosts: webservers
+   tasks:
+      - name: Create a soft link file
+        file:
+          path: /tmp/foo.conf
+          state: touch
+          modification_time: "preserve"
+          access_time: "preserve"
+---
+ - hosts: dbservers
+   tasks:
+     - name: find the stats of foo.conf
+       stat:
+         path: /tmp/dbserver.txt
+       register: output
+     - name: print the stat
+       debug:
+         msg: "{{ output }}"
+     - name: Fail if the file does not belong to 'root'
+       ansible.builtin.fail:
+        msg: "Whoops! file ownership has changed"
+       when: output.stat.pw_name == 'root'
