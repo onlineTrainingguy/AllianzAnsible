@@ -1,0 +1,98 @@
+<Prop1=sameFoAllEnv> </Prop1>
+<env> {{ env }} </env>
+<ConnectionString> sever= {{ db }}</ConnectionString>
+env = {{ env }}
+
+local_id = {{ ansible_host }}
+
+local_OSFamily = {{ ansible_facts['os_family'] }}
+
+local_OS = {{ ansible_distribution }}
+[user]
+  name = {{ user.name }}
+  username = {{ user.username }}
+  email = {{ user.username }}@example.com
+
+
+
+---
+
+ - name: Parsing Jinja2 templates
+
+   hosts: dbservers
+
+   vars:
+
+     env: staging
+
+   tasks:
+
+     - name: template file onto remote hosts
+
+       template:
+
+         src: my_app.conf.j2
+
+         dest: /tmp/myconfigfile
+---
+
+ - name: Parsing Jinja2 templates
+
+   hosts: webservers
+
+   vars:
+
+     env: production
+
+   tasks:
+
+     - name: template file onto remote hosts
+
+       template:
+
+         src: my_app.conf.j2
+
+         dest: /tmp/myconfigfile
+---
+  - hosts: 172.31.94.103
+    vars:
+      db: "198.20.33.66"
+      env: "Staging"
+    tasks:
+      - template:
+          src: dbconnection.j2
+          dest: /var/www/html/db.xml
+---
+  - hosts: 172.31.80.193
+    vars:
+      db: "198.20.33.67"
+      env: "Production"
+    tasks:
+      - template:
+          src: dbconnection.j2
+          dest: /var/www/html/db.xml
+---
+ - name: play for template
+   hosts: "*"
+   vars:
+     users:
+          - name: John Smith
+            username: jsmith
+          - name: Mohit Singh
+            username: msingh
+   tasks:
+    - name: users
+      user:
+        name: "{{ user.username }}"
+        comment: "{{user.name }}"
+        state: present
+      loop: "{{ users }}"
+      loop_control:
+         loop_var: user
+    - name: processing jinja template
+      template:
+        src: users.j2
+        dest: "/home/{{ user.username }}/gitconfig"
+      loop: "{{ users }}"
+      loop_control:
+        loop_var: user
